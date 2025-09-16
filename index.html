@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="icon" href="./assets/ishelp-favicon.png" type="image/png">
+<title>Gerador de Contratos - Site (Is Help)</title>
+
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
+
+<!-- Gerador de PDF (front-end only) -->
+<script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+
+<style>
+:root{
+  --ui-bg:#002022; --ui-card:#13161a; --ui-ink:#e7ecf3; --ui-muted:#a6b0bf;
+  --ui-radius:14px; --ui-shadow:0 10px 28px rgba(0,0,0,.35);
+  --page-w:210mm; --page-h:297mm; --page-pad:25.4mm; /* A4 + margens 2,54 cm */
+}
+
+/* ===== App (UI) ===== */
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--ui-bg);color:var(--ui-ink);font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif}
+.wrap{max-width:1200px;margin:28px auto;padding:0 16px}
+.app-title{margin:0 0 8px;font-size:20px;font-weight:700}
+.grid{display:grid;grid-template-columns:360px 1fr;gap:24px}
+.card{background:var(--ui-card);border:1px solid rgba(255,255,255,.08);border-radius:var(--ui-radius);box-shadow:var(--ui-shadow)}
+.card h2{margin:0;padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.08);font-size:16px}
+.card .body{padding:18px}
+label{display:block;font-size:12px;color:var(--ui-muted);margin:10px 0 6px}
+input, textarea, select{width:100%;background:#0e1115;color:var(--ui-ink);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px 12px;outline:none}
+input:focus, textarea:focus, select:focus{border-color:#94a3b8;box-shadow:0 0 0 3px rgba(148,163,184,.2)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.btn{cursor:pointer;border:1px solid rgba(255,255,255,.14);background:#0e1115;color:var(--ui-ink);padding:10px 14px;border-radius:10px;font-weight:600}
+.btn.success{background:#FFB800;border-color:#FFD500}
+.hint{color:var(--ui-muted);font-size:12px;margin-top:6px}
+
+/* ===== Documento (Word-like) ===== */
+.sheet-wrap{background:#fff;border-radius:12px;overflow:hidden}
+.sheet{
+  width:var(--page-w); min-height:var(--page-h);
+  padding:var(--page-pad);
+  color:#000000; font-family:"Times New Roman", Times, Georgia, serif;
+  line-height:1.5; margin:0 auto; background:#13161a;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  hyphens: auto; word-break: normal;
+}
+.logo-top{display:flex;justify-content:center;align-items:center;margin-bottom:14px}
+.logo-top img{max-height:44px}
+.title{font-weight:bold;text-transform:uppercase;text-align:center;margin:0 0 8px 0;font-size:20px}
+.definicao{font-size:11px; text-align:justify; margin:8px 0 18px}
+.section{margin:16px 0 10px; font-size:16px; font-weight:bold; text-transform:uppercase}
+.block p,
+.block li{font-size:12px; margin:6px 0; text-align:justify}
+.block ol{margin:6px 0 6px 22px}
+.alpha{list-style: lower-alpha}
+.alpha li::marker{content:"(" counter(list-item, lower-alpha) ") "}
+.num{ margin: 6px 0; }
+.assinaturas{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:24px}
+.assinaturas .line{border-top:1px solid #111;padding-top:6px;text-align:center; font-size:12px;}
+.small{font-size:11px}
+.linha{border-top:1px solid #111;margin:12px 0}
+.caixa{display:inline-block; width:12px; height:12px; border:1px solid #111; margin:0 6px -1px 6px}
+.mono{font-family:""Nunito", -apple-system, "Segoe UI", Roboto, Arial, sans-serif", Courier, monospace}
+.tante-e-tada{font-size: 12px;}
+
+/* Impressão: esconder formulário e usar página A4 limpa */
+@media print{
+  body{background:#fff}
+  .grid{display:block}
+  .card{display:none}
+  .sheet-wrap{box-shadow:none}
+  .sheet{width:auto;min-height:auto;padding:10mm}
+}
+/* ===== Overrides de fonte ===== */
+.sheet{
+  font-family: "Nunito", -apple-system, "Segoe UI", Roboto, Arial, sans-serif !important;
+  color:#000000
+}
+.title, .section{ font-weight: 700; }
+
+/* Responsivo */
+@media (max-width:1100px){
+  .grid{grid-template-columns:1fr}
+  .sheet{width:auto}
+}
+/* === Quebras de página (Word-like) === */
+.page-break { break-before: page; page-break-before: always; }
+.section, .block { break-inside: avoid; page-break-inside: avoid; }
+.block li     { break-inside: avoid; }
+.title        { break-after: avoid; page-break-after: avoid; }
+
+/* Word-like escuro na tela */
+@media screen {
+  .sheet{ background: #13161a !important; color: #ffffff !important; }
+}
+/* Claro na impressão/PDF */
+@media print {
+  .sheet{ background: #ffffff !important; color: #000000 !important; }
+}
+/* Botões lado a lado */
+.actions{
+  display: flex; gap: 10px; flex-wrap: nowrap; align-items: center;
+}
+.actions .btn{ flex: 0 0 auto; }
+/* Texto escuro no botão imprimir */
+#imprimir { color: #0b0d10; }
+#imprimir:hover,#imprimir:focus { color: #0b0d10; }
+
+/* Visibilidade condicional p/ impressão */
+.print-only { display: none !important; }
+@media print {
+  .no-print{ display: none !important; }
+  .print-only{ display: block !important; }
+  .screen-only{ display: none !important; }
+}
+
+/* <= 1024px */
+@media screen and (max-width: 1024px){
+  .wrap{ margin: 20px auto; padding: 0 12px; }
+  .grid{ grid-template-columns: 1fr; gap: 16px; }
+  .sheet{ width: auto; padding: 24px; border-radius: 12px; }
+}
+/* <= 768px */
+@media screen and (max-width: 768px){
+  .row{ grid-template-columns: 1fr; gap: 8px; }
+  label{ font-size: 13px; }
+  input, textarea, select{ font-size: 16px; padding: 12px; }
+  .title{ font-size: 18px; }
+  .section{ font-size: 15px; }
+  .block p, .block li{ font-size: 13px; }
+  .sheet{ padding: 20px; }
+  .logo-top img{ max-height: 36px; }
+}
+/* <= 420px */
+@media screen and (max-width: 420px){
+  .wrap{ padding: 0 10px; }
+  .sheet{ padding: 16px; }
+  .actions{ flex-wrap: wrap; gap: 8px; }
+  .actions .btn{ width: 100%; text-align: center; }
+}
+</style>
+
+<script>
+/* ===== Utilidades ===== */
+const $  = (s) => document.querySelector(s);
+const $$ = (s) => [...document.querySelectorAll(s)];
+const get= (id)=> document.getElementById(id);
+
+/* Campos do formulário */
+const fields = [
+  "cliente","clienteDoc","contatoCliente","enderecoCliente",
+  "valor","valorSinal","valorFinal","formaPagamento",
+  "dataPrimeiroPgto","dataInicio","dataAssinatura",
+  "dominio","hospedagem","escopo","detalhesPlano","clausulasExtras"
+];
+
+/* Datas padrão = hoje */
+(function setDefaultDates(){
+  const today = new Date();
+  const iso = (d)=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  ["dataPrimeiroPgto","dataInicio","dataAssinatura"].forEach(id=>{
+    if(get(id) && !get(id).value) get(id).value = iso(today);
+  });
+})();
+
+/* Restaurar rascunho */
+(function loadDraft(){
+  try{
+    const saved = JSON.parse(localStorage.getItem('ishelp-contrato-site-draft')||'{}');
+    fields.forEach(f=>{ if(saved[f] && get(f)) get(f).value = saved[f]; });
+  }catch(e){}
+})();
+
+/* Autosave */
+fields.forEach(f=>{
+  const el=get(f);
+  el && el.addEventListener('input',()=>{
+    const o={}; fields.forEach(ff=> o[ff]= (get(ff)? get(ff).value : '') );
+    localStorage.setItem('ishelp-contrato-site-draft',JSON.stringify(o));
+    merge();
+  });
+});
+
+/* Ações */
+document.addEventListener('DOMContentLoaded', ()=>{
+  get('limpar').addEventListener('click',()=>{
+    fields.forEach(f=> get(f) && (get(f).value=''));
+    localStorage.removeItem('ishelp-contrato-site-draft');
+    setDefaultPreset();
+    merge();
+  });
+  get('restaurar').addEventListener('click',()=>{
+    const saved = JSON.parse(localStorage.getItem('ishelp-contrato-site-draft')||'{}');
+    fields.forEach(f=> get(f) && (get(f).value = saved[f]||''));
+    merge();
+  });
+  get('imprimir').addEventListener('click',()=> window.print());
+  get('gerarPdf').addEventListener('click',()=> {
+    const el = document.getElementById('contrato');
+    const opt = {
+      margin:       0.5,
+      filename:     'Contrato-Site-IsHelp.pdf',
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true },
+      jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+    };
+    html2pdf().from(el).set(opt).save();
+  });
+  setDefaultPreset();
+  merge();
+});
+
+/* Preset padrão site */
+function setDefaultPreset(){
+  if(get('escopo') && !get('escopo').value) get('escopo').value = 'Desenvolvimento de site institucional (layout, páginas principais, formulários e integrações essenciais)';
+  if(get('valor') && !get('valor').value) get('valor').value = 'R$ 1.200,00';
+  if(get('valorSinal') && !get('valorSinal').value) get('valorSinal').value = 'R$ 600,00';
+  if(get('valorFinal') && !get('valorFinal').value) get('valorFinal').value = 'R$ 600,00';
+}
+
+/* Helpers */
+function brDate(iso){
+  if(!iso) return '';
+  const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`;
+}
+
+/* Merge dinâmica no preview */
+function merge(){
+  const map={}; fields.forEach(f=> map[f]=(get(f) && get(f).value || '').trim());
+  map['dataPrimeiroPgtoLegivel'] = brDate(map['dataPrimeiroPgto']) || '[dd/mm/aaaa]';
+  map['dataInicioLegivel']       = brDate(map['dataInicio'])       || '[dd/mm/aaaa]';
+  map['dataAssinaturaLegivel']   = brDate(map['dataAssinatura'])   || '[dd/mm/aaaa]';
+
+  $$('[data-merge]').forEach(el=>{
+    const key=el.getAttribute('data-merge');
+    el.textContent = map[key] || `[${key}]`;
+  });
+
+  // Detalhes do plano (opcional)
+  const dText = document.getElementById('detalhesPlanoText');
+  if(dText) dText.textContent = map['detalhesPlano'] || '[Opcional]';
+
+  // Cláusulas extras (opcional)
+  const extras = (map['clausulasExtras']||'').trim();
+  const extrasBlock = document.getElementById('extrasBlock');
+  if(extrasBlock){
+    extrasBlock.innerHTML = '';
+    if(extras){
+      const div=document.createElement('div');
+      div.className='block';
+      div.innerHTML = `<div class="section">Cláusulas Adicionais do Site (Opcional)</div><p class="small" style="white-space:pre-line;word-break:break-word">${extras}</p>`;
+      extrasBlock.appendChild(div);
+    }
+  }
+}
+</script>
+</head>
+
+<body>
+  <div class="wrap">
+    <h1 class="app-title">Desenvolvido por Is Help &copy;</h1>
+    <p class="hint">Contrato exclusivo para <strong>Desenvolvimento de Site</strong>. Preencha os dados e gere o PDF/Impressão.</p>
+
+    <div class="grid">
+      <!-- ===== FORMULÁRIO ===== -->
+      <div class="card">
+        <h2>Formulário</h2>
+        <div class="body">
+
+          <label for="cliente">Razão Social / Nome (CONTRATANTE)</label>
+          <input id="cliente" placeholder="Razão Social do Cliente" />
+
+          <div class="row">
+            <div>
+              <label for="clienteDoc">CNPJ/CPF</label>
+              <input id="clienteDoc" placeholder="00.000.000/0000-00" />
+            </div>
+            <div>
+              <label for="contatoCliente">E-mail / Telefone</label>
+              <input id="contatoCliente" placeholder="email@cliente.com | (00) 00000-0000" />
+            </div>
+          </div>
+
+          <label for="enderecoCliente">Endereço (CONTRATANTE)</label>
+          <input id="enderecoCliente" placeholder="Rua, número, bairro, cidade/UF" />
+
+          <div class="row">
+            <div>
+              <label for="escopo">Escopo do Site</label>
+              <input id="escopo" placeholder="Ex.: Desenvolvimento de site institucional..." />
+              <label for="dominio">Domínio do Site (opcional)</label>
+              <input id="dominio" placeholder="ex.: www.seudominio.com.br" />
+            </div>
+            <div>
+              <label for="hospedagem">Provedor de Hospedagem (opcional)</label>
+              <input id="hospedagem" placeholder="ex.: Hostinger, Locaweb, Vercel..." />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="valor">Valor Total</label>
+              <input id="valor" placeholder="R$ 1.200,00" />
+            </div>
+            <div>
+              <label for="formaPagamento">Forma de Pagamento</label>
+              <select id="formaPagamento">
+                <option value="">Selecione…</option>
+                <option>PIX</option>
+                <option>Transferência Bancária</option>
+                <option>Cartão de Crédito</option>
+                <option>Boleto</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="valorSinal">Parcela 1 (Sinal)</label>
+              <input id="valorSinal" placeholder="R$ 600,00" />
+            </div>
+            <div>
+              <label for="valorFinal">Parcela 2 (Antes do Go-live)</label>
+              <input id="valorFinal" placeholder="R$ 600,00" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="dataPrimeiroPgto">Data 1º Pagamento (Sinal)</label>
+              <input id="dataPrimeiroPgto" type="date" />
+            </div>
+            <div>
+              <label for="dataInicio">Início do Projeto</label>
+              <input id="dataInicio" type="date" />
+            </div>
+          </div>
+
+          <label for="dataAssinatura">Data de Assinatura</label>
+          <input id="dataAssinatura" type="date" />
+
+          <label for="detalhesPlano">Observações / Detalhes Técnicos (opcional)</label>
+          <textarea id="detalhesPlano" rows="4" placeholder="Ex.: CMS WordPress; páginas: Home, Sobre, Serviços, Contato; integrações: WhatsApp, GA4, Pixel Meta; ..."></textarea>
+
+          <label for="clausulasExtras">Cláusulas adicionais (opcional)</label>
+          <textarea id="clausulasExtras" rows="3" placeholder="Ex.: SLA prioritário; migração de conteúdo; treinamento extra..."></textarea>
+
+          <div class="actions">
+            <button class="btn" id="limpar">Limpar</button>
+            <button class="btn" id="restaurar">Restaurar</button>
+            <button class="btn success" id="imprimir">Imprimir</button>
+            <button class="btn success" id="gerarPdf">Baixar PDF</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== PÁGINA / CONTRATO ===== -->
+      <div class="sheet-wrap" id="previewCard" aria-live="polite">
+        <div class="sheet" id="contrato">
+          <div class="logo-top">
+            <img src="./assets/ishelp-logo.png" alt="Is Help" />
+          </div>
+
+          <div class="title">CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE DESENVOLVIMENTO DE SITE</div>
+          <p class="definicao">
+            DEFINIÇÃO: Este contrato visa documentar a proposta de prestação de serviços apresentada pela CONTRATADA e aceita previamente pela CONTRATANTE, contendo as informações sobre a metodologia de trabalho, recursos necessários à execução do serviço, bem como as condições de pagamento e prazos previamente definidos.
+          </p>
+
+          <div class="section">DADOS DO CONTRATADO</div>
+          <div class="block">
+            <p><strong>Razão Social:</strong> IS HELP REPRESENTACOES COMERCIAIS LTDA</p>
+            <p><strong>CNPJ:</strong> 31.280.692/0001-00</p>
+            <p><strong>E-mail:</strong> contato@ishelp.com.br &nbsp;&nbsp; <strong>Celular:</strong> (34) 98822-7461 &nbsp;&nbsp; <strong>Fixo:</strong> (34) 98822-7461</p>
+            <p><strong>Endereço:</strong> AV. FLORIANO PEIXOTO, 1767 – NOSSA SENHORA APARECIDA, UBERLÂNDIA/MG – CEP: 38400-700</p>
+          </div>
+
+          <div class="section">DADOS DA CONTRATANTE</div>
+          <div class="block">
+            <p><strong>Razão Social / Nome:</strong> <span data-merge="cliente">[Cliente]</span></p>
+            <p><strong>CNPJ/CPF:</strong> <span data-merge="clienteDoc">[Documento]</span></p>
+            <p><strong>Endereço:</strong> <span data-merge="enderecoCliente">[Endereço]</span></p>
+            <p><strong>Contato:</strong> <span data-merge="contatoCliente">[E-mail / Telefone]</span></p>
+          </div>
+
+          <div class="section">Objeto do Contrato</div>
+          <div class="block">
+            <p>O presente contrato tem por objeto a prestação de serviços de <strong>desenvolvimento de site</strong>, conforme especificações descritas no Anexo deste instrumento e na proposta aprovada pela CONTRATANTE.</p>
+            <p><strong>Escopo resumido informado:</strong> <span data-merge="escopo">[Escopo do Site]</span></p>
+            <p><strong>Domínio (opcional):</strong> <span data-merge="dominio">[Domínio]</span> &nbsp;&nbsp; <strong>Hospedagem (opcional):</strong> <span data-merge="hospedagem">[Hospedagem]</span></p>
+          </div>
+
+          <div class="section">Anexo – Desenvolvimento de Site</div>
+          <div class="block">
+            <p>Esta seção regula exclusivamente o <strong>desenvolvimento de site</strong> pela CONTRATADA em favor da CONTRATANTE, conforme escopo, prazos e condições definidos neste instrumento e na proposta aprovada.</p>
+            <ol class="alpha">
+              <li><strong>Escopo e entregáveis do site:</strong> criação do layout do site, implementação das páginas previstas do site (ex.: Página Inicial, Sobre, Contato, Serviços/Produtos), formulários de contato do site, integrações essenciais do site (ex.: WhatsApp, Google Analytics/GA4, Pixel Meta), otimização básica de imagens do site e configuração de meta tags do site.</li>
+              <li><strong>Tecnologia do site:</strong> o site será desenvolvido com HTML/CSS/JavaScript e/ou CMS (ex.: WordPress) e plugins compatíveis, conforme a proposta aprovada. <em>Hospedagem do site</em>, <em>domínio do site</em> e <em>e-mails corporativos</em> são de responsabilidade da CONTRATANTE, salvo contratação específica.</li>
+              <li><strong>Conteúdo e direitos aplicados ao site:</strong> textos, logotipos, imagens e demais materiais para o site devem ser fornecidos pela CONTRATANTE, que declara deter os direitos de uso. Na falta de material para o site, a CONTRATADA poderá utilizar bancos de imagens com licenças adequadas.</li>
+              <li><strong>Layout do site e revisões:</strong> 1 (um) layout base do site com até 2 (duas) rodadas de ajustes. Alterações estruturais do site ou além do escopo aprovado serão orçadas e cobradas à parte.</li>
+              <li><strong>Prazos do site e dependências:</strong> o cronograma estimado do site será contado a partir da confirmação de pagamento e do recebimento integral dos insumos para o site. Atrasos na entrega/validação pela CONTRATANTE pausam o cronograma do site pelo mesmo período.</li>
+              <li><strong>Homologação e publicação do site:</strong> a CONTRATADA entregará versão de testes do site para homologação em até 5 (cinco) dias úteis. Aprovada a homologação do site, será realizada a publicação (“go-live”). Ausência de manifestação no prazo de 5 (cinco) dias úteis caracterizará aceite tácito do site.</li>
+              <li><strong>SEO e performance do site:</strong> serão aplicadas boas práticas semânticas e meta tags básicas no site. Não há garantia de posicionamento do site nos mecanismos de busca.</li>
+              <li><strong>Acessibilidade e LGPD no site:</strong> adoção de boas práticas de acessibilidade no site e disponibilização de aviso de cookies/política de privacidade quando aplicável. Adequações jurídicas específicas e textos legais do site são de responsabilidade da CONTRATANTE.</li>
+              <li><strong>Garantia técnica do site:</strong> correção de defeitos técnicos (bugs) no site por 30 (trinta) dias após o go-live, desde que não haja alterações por terceiros. Novas funcionalidades do site ou mudanças de escopo não se incluem na garantia.</li>
+              <li><strong>Propriedade intelectual do site:</strong> a titularidade do código e da arte final do site será transferida à CONTRATANTE após a quitação integral. Licenças de terceiros utilizadas no site (temas, plugins, fontes, APIs) permanecem regidas por seus termos e custos.</li>
+              <li><strong>Manutenção opcional do site:</strong> suporte evolutivo do site, atualizações, backups e pequenos ajustes do site poderão ser contratados à parte, com valor mensal e condições (SLA) próprias.</li>
+            </ol>
+          </div>
+
+          <div class="section">Valor do Serviço e Forma de Pagamento (Site)</div>
+          <div class="block">
+            <p>O valor total devido pelo <strong>site</strong> é de <strong><span data-merge="valor">R$ 1.200,00</span></strong>.</p>
+            <ol class="alpha">
+              <li><strong>Parcelamento do site:</strong> pagamento em 2 (duas) parcelas:
+                <ol>
+                  <li><strong><span data-merge="valorSinal">R$ 600,00</span></strong> no ato da assinatura (sinal e princípio de pagamento).</li>
+                  <li><strong><span data-merge="valorFinal">R$ 600,00</span></strong> após a conclusão do desenvolvimento, imediatamente antes da publicação oficial do site (go-live).</li>
+                </ol>
+              </li>
+              <li><strong>Meios de pagamento do site:</strong> <span data-merge="formaPagamento">[Forma de Pagamento]</span>.</li>
+              <li><strong>Condição para publicação do site:</strong> a entrega e/ou publicação do site no domínio da CONTRATANTE está condicionada à quitação integral dos valores devidos do site.</li>
+              <li><strong>Data do 1º pagamento (sinal):</strong> <span data-merge="dataPrimeiroPgtoLegivel" class="mono">[dd/mm/aaaa]</span> &nbsp;&nbsp; <strong>Início do projeto:</strong> <span data-merge="dataInicioLegivel" class="mono">[dd/mm/aaaa]</span></li>
+            </ol>
+          </div>
+
+          <div class="section">Atraso, Suspensão e Encargos (Site)</div>
+          <div class="block">
+            <p>O atraso no pagamento de quaisquer parcelas relativas ao <strong>site</strong> autoriza a CONTRATADA a suspender a continuidade dos serviços, a entrega de arquivos e/ou a publicação do site, até a regularização.</p>
+            <ol class="alpha">
+              <li><strong>Multa e juros do site:</strong> atraso superior a 7 (sete) dias: multa de 2% (dois por cento) sobre o valor em aberto, acrescida de juros de 1% (um por cento) ao mês, pro rata die.</li>
+              <li><strong>Reativação do cronograma do site:</strong> regularizado o pagamento, os prazos contratuais voltam a correr a partir do primeiro dia útil subsequente à comprovação.</li>
+              <li><strong>Custos externos do site:</strong> taxas de terceiros (hospedagem, domínio, plugins, temas, APIs) vencidas por atraso da CONTRATANTE não são de responsabilidade da CONTRATADA.</li>
+            </ol>
+          </div>
+
+          <div class="section">Pagamento Inicial (Sinal) e Não Reembolso (Site)</div>
+          <div class="block">
+            <p>A primeira parcela referente ao <strong>site</strong> (<span data-merge="valorSinal">R$ 600,00</span>) possui natureza de sinal e princípio de pagamento, destinada a custear o início dos trabalhos (planejamento, wireframe, setup e alocação de equipe) e é <strong>não reembolsável</strong> após o início do projeto.</p>
+            <ol class="alpha">
+              <li><strong>Não reembolsável (site):</strong> ainda que haja cancelamento por iniciativa da CONTRATANTE.</li>
+              <li><strong>Cancelamento antes do go-live do site:</strong> permanecem devidos os valores proporcionais às etapas já executadas, sem prejuízo da retenção do sinal.</li>
+            </ol>
+          </div>
+
+          <!-- Extras opcionais -->
+          <div id="extrasBlock"></div>
+
+          <div class="section">Disposições Gerais</div>
+          <div class="block">
+            <p>Este contrato é firmado em caráter irrevogável e irretratável, obrigando as partes e seus sucessores. Qualquer alteração somente terá validade se realizada por escrito e assinada por ambas as partes. Fica eleito o foro da comarca de ___________________________ para dirimir eventuais dúvidas ou litígios decorrentes deste contrato, renunciando as partes a qualquer outro, por mais privilegiado que seja.</p>
+          </div>
+
+          <div class="section">Assinaturas</div>
+          <div class="block">
+            <p>Por estarem assim justas e contratadas, firmam o presente instrumento em 02 (duas) vias de igual teor.</p>
+            <p class="small">Assinaturas digitais (DocuSign/Clicksign) ou manuscritas são válidas para todos os fins de direito.</p>
+
+            <div class="assinaturas">
+              <div class="tante-e-tada">
+                <div class="line"><span data-merge="cliente">[Cliente]</span></div>
+                CONTRATANTE<br>
+                <span class="small">Assinatura Digital: ____________________________</span><br>
+                <span class="small">Data: <span data-merge="dataAssinaturaLegivel" class="mono">[dd/mm/aaaa]</span></span>
+              </div>
+              <div class="tante-e-tada">
+                <div class="line">IS HELP REPRESENTACOES COMERCIAIS LTDA</div>
+                CONTRATADA<br>
+                <span class="small">Assinatura Digital: ____________________________</span><br>
+                <span class="small">Data: <span data-merge="dataAssinaturaLegivel" class="mono">[dd/mm/aaaa]</span></span>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /sheet -->
+      </div><!-- /sheet-wrap -->
+    </div><!-- /grid -->
+  </div><!-- /wrap -->
+</body>
+</html>
