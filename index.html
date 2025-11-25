@@ -1,15 +1,13 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<html lang="pt-BR"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" href="./assets/ishelp-favicon.png" type="image/png">
 <title>Gerador de Contratos - Site (Is Help)</title>
 
 <!-- Google Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&amp;display=swap" rel="stylesheet">
 
 <!-- Gerador de PDF (front-end only) -->
 <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
@@ -196,8 +194,26 @@ document.addEventListener('DOMContentLoaded', ()=>{
     merge();
   });
   get('restaurar').addEventListener('click',()=>{
-    const saved = JSON.parse(localStorage.getItem('ishelp-contrato-site-draft')||'{}');
-    fields.forEach(f=> get(f) && (get(f).value = saved[f]||''));
+    const raw = localStorage.getItem('ishelp-contrato-site-draft');
+    if(!raw){
+      merge();
+      return;
+    }
+    let saved = {};
+    try{
+      saved = JSON.parse(raw) || {};
+    }catch(e){
+      console.warn('Rascunho invalido, ignorando restauracao.', e);
+    }
+    let restored = false;
+    fields.forEach(f=>{
+      const el = get(f);
+      if(!el) return;
+      if(Object.prototype.hasOwnProperty.call(saved,f)){
+        el.value = saved[f];
+        restored = true;
+      }
+    });
     merge();
   });
   get('imprimir').addEventListener('click',()=> window.print());
@@ -264,7 +280,7 @@ function merge(){
 
 <body>
   <div class="wrap">
-    <h1 class="app-title">Desenvolvido por Is Help &copy;</h1>
+    <h1 class="app-title">Desenvolvido por Is Help ©</h1>
     <p class="hint">Contrato exclusivo para <strong>Desenvolvimento de Site</strong>. Preencha os dados e gere o PDF/Impressão.</p>
 
     <div class="grid">
@@ -274,39 +290,39 @@ function merge(){
         <div class="body">
 
           <label for="cliente">Razão Social / Nome (CONTRATANTE)</label>
-          <input id="cliente" placeholder="Razão Social do Cliente" />
+          <input id="cliente" placeholder="Razão Social do Cliente">
 
           <div class="row">
             <div>
               <label for="clienteDoc">CNPJ/CPF</label>
-              <input id="clienteDoc" placeholder="00.000.000/0000-00" />
+              <input id="clienteDoc" placeholder="00.000.000/0000-00">
             </div>
             <div>
               <label for="contatoCliente">E-mail / Telefone</label>
-              <input id="contatoCliente" placeholder="email@cliente.com | (00) 00000-0000" />
+              <input id="contatoCliente" placeholder="email@cliente.com | (00) 00000-0000">
             </div>
           </div>
 
           <label for="enderecoCliente">Endereço (CONTRATANTE)</label>
-          <input id="enderecoCliente" placeholder="Rua, número, bairro, cidade/UF" />
+          <input id="enderecoCliente" placeholder="Rua, número, bairro, cidade/UF">
 
           <div class="row">
             <div>
               <label for="escopo">Escopo do Site</label>
-              <input id="escopo" placeholder="Ex.: Desenvolvimento de site institucional..." />
+              <input id="escopo" placeholder="Ex.: Desenvolvimento de site institucional...">
               <label for="dominio">Domínio do Site (opcional)</label>
-              <input id="dominio" placeholder="ex.: www.seudominio.com.br" />
+              <input id="dominio" placeholder="ex.: www.seudominio.com.br">
             </div>
             <div>
               <label for="hospedagem">Provedor de Hospedagem (opcional)</label>
-              <input id="hospedagem" placeholder="ex.: Hostinger, Locaweb, Vercel..." />
+              <input id="hospedagem" placeholder="ex.: Hostinger, Locaweb, Vercel...">
             </div>
           </div>
 
           <div class="row">
             <div>
               <label for="valor">Valor Total</label>
-              <input id="valor" placeholder="R$ 1.200,00" />
+              <input id="valor" placeholder="R$ 1.200,00">
             </div>
             <div>
               <label for="formaPagamento">Forma de Pagamento</label>
@@ -323,27 +339,27 @@ function merge(){
           <div class="row">
             <div>
               <label for="valorSinal">Parcela 1 (Sinal)</label>
-              <input id="valorSinal" placeholder="R$ 600,00" />
+              <input id="valorSinal" placeholder="R$ 600,00">
             </div>
             <div>
               <label for="valorFinal">Parcela 2 (Antes do Go-live)</label>
-              <input id="valorFinal" placeholder="R$ 600,00" />
+              <input id="valorFinal" placeholder="R$ 600,00">
             </div>
           </div>
 
           <div class="row">
             <div>
               <label for="dataPrimeiroPgto">Data 1º Pagamento (Sinal)</label>
-              <input id="dataPrimeiroPgto" type="date" />
+              <input id="dataPrimeiroPgto" type="date">
             </div>
             <div>
               <label for="dataInicio">Início do Projeto</label>
-              <input id="dataInicio" type="date" />
+              <input id="dataInicio" type="date">
             </div>
           </div>
 
           <label for="dataAssinatura">Data de Assinatura</label>
-          <input id="dataAssinatura" type="date" />
+          <input id="dataAssinatura" type="date">
 
           <label for="detalhesPlano">Observações / Detalhes Técnicos (opcional)</label>
           <textarea id="detalhesPlano" rows="4" placeholder="Ex.: CMS WordPress; páginas: Home, Sobre, Serviços, Contato; integrações: WhatsApp, GA4, Pixel Meta; ..."></textarea>
@@ -364,7 +380,7 @@ function merge(){
       <div class="sheet-wrap" id="previewCard" aria-live="polite">
         <div class="sheet" id="contrato">
           <div class="logo-top">
-            <img src="./assets/ishelp-logo.png" alt="Is Help" />
+            <img src="https://contrato-ishelp.vercel.app/assets/ishelp-logo.png" alt="Is Help">
           </div>
 
           <div class="title">CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE DESENVOLVIMENTO DE SITE</div>
@@ -382,17 +398,17 @@ function merge(){
 
           <div class="section">DADOS DA CONTRATANTE</div>
           <div class="block">
-            <p><strong>Razão Social / Nome:</strong> <span data-merge="cliente">[Cliente]</span></p>
-            <p><strong>CNPJ/CPF:</strong> <span data-merge="clienteDoc">[Documento]</span></p>
-            <p><strong>Endereço:</strong> <span data-merge="enderecoCliente">[Endereço]</span></p>
-            <p><strong>Contato:</strong> <span data-merge="contatoCliente">[E-mail / Telefone]</span></p>
+            <p><strong>Razão Social / Nome:</strong> <span data-merge="cliente">[cliente]</span></p>
+            <p><strong>CNPJ/CPF:</strong> <span data-merge="clienteDoc">[clienteDoc]</span></p>
+            <p><strong>Endereço:</strong> <span data-merge="enderecoCliente">[enderecoCliente]</span></p>
+            <p><strong>Contato:</strong> <span data-merge="contatoCliente">[contatoCliente]</span></p>
           </div>
 
           <div class="section">Objeto do Contrato</div>
           <div class="block">
             <p>O presente contrato tem por objeto a prestação de serviços de <strong>desenvolvimento de site</strong>, conforme especificações descritas no Anexo deste instrumento e na proposta aprovada pela CONTRATANTE.</p>
-            <p><strong>Escopo resumido informado:</strong> <span data-merge="escopo">[Escopo do Site]</span></p>
-            <p><strong>Domínio (opcional):</strong> <span data-merge="dominio">[Domínio]</span> &nbsp;&nbsp; <strong>Hospedagem (opcional):</strong> <span data-merge="hospedagem">[Hospedagem]</span></p>
+            <p><strong>Escopo resumido informado:</strong> <span data-merge="escopo">Desenvolvimento de site institucional (layout, páginas principais, formulários e integrações essenciais)</span></p>
+            <p><strong>Domínio (opcional):</strong> <span data-merge="dominio">[dominio]</span> &nbsp;&nbsp; <strong>Hospedagem (opcional):</strong> <span data-merge="hospedagem">[hospedagem]</span></p>
           </div>
 
           <div class="section">Anexo – Desenvolvimento de Site</div>
@@ -417,13 +433,8 @@ function merge(){
           <div class="block">
             <p>O valor total devido pelo <strong>site</strong> é de <strong><span data-merge="valor">R$ 1.200,00</span></strong>.</p>
             <ol class="alpha">
-              <li><strong>Parcelamento do site:</strong> pagamento em 2 (duas) parcelas:
-                <ol>
-                  <li><strong><span data-merge="valorSinal">R$ 600,00</span></strong> no ato da assinatura (sinal e princípio de pagamento).</li>
-                  <li><strong><span data-merge="valorFinal">R$ 600,00</span></strong> após a conclusão do desenvolvimento, imediatamente antes da publicação oficial do site (go-live).</li>
-                </ol>
-              </li>
-              <li><strong>Meios de pagamento do site:</strong> <span data-merge="formaPagamento">[Forma de Pagamento]</span>.</li>
+              
+              <li><strong>Meios de pagamento do site:</strong> <span data-merge="formaPagamento">[formaPagamento]</span>.</li>
               <li><strong>Condição para publicação do site:</strong> a entrega e/ou publicação do site no domínio da CONTRATANTE está condicionada à quitação integral dos valores devidos do site.</li>
               <li><strong>Data do 1º pagamento (sinal):</strong> <span data-merge="dataPrimeiroPgtoLegivel" class="mono">[dd/mm/aaaa]</span> &nbsp;&nbsp; <strong>Início do projeto:</strong> <span data-merge="dataInicioLegivel" class="mono">[dd/mm/aaaa]</span></li>
             </ol>
@@ -441,7 +452,7 @@ function merge(){
 
           <div class="section">Pagamento Inicial (Sinal) e Não Reembolso (Site)</div>
           <div class="block">
-            <p>A primeira parcela referente ao <strong>site</strong> (<span data-merge="valorSinal">R$ 600,00</span>) possui natureza de sinal e princípio de pagamento, destinada a custear o início dos trabalhos (planejamento, wireframe, setup e alocação de equipe) e é <strong>não reembolsável</strong> após o início do projeto.</p>
+			<p>A primeira parcela referente ao <strong>site</strong> (<span data-merge="valorSinal">[valorSinal]</span>) possui natureza de sinal e princípio de pagamento, destinada a custear o início dos trabalhos (planejamento, wireframe, setup e alocação de equipe) e é <strong>não reembolsável</strong> após o início do projeto.</p>
             <ol class="alpha">
               <li><strong>Não reembolsável (site):</strong> ainda que haja cancelamento por iniciativa da CONTRATANTE.</li>
               <li><strong>Cancelamento antes do go-live do site:</strong> permanecem devidos os valores proporcionais às etapas já executadas, sem prejuízo da retenção do sinal.</li>
@@ -453,17 +464,17 @@ function merge(){
 
           <div class="section">Disposições Gerais</div>
           <div class="block">
-            <p>Este contrato é firmado em caráter irrevogável e irretratável, obrigando as partes e seus sucessores. Qualquer alteração somente terá validade se realizada por escrito e assinada por ambas as partes. Fica eleito o foro da comarca de ___________________________ para dirimir eventuais dúvidas ou litígios decorrentes deste contrato, renunciando as partes a qualquer outro, por mais privilegiado que seja.</p>
+            <p>Este contrato é firmado em caráter irrevogável e irretratável, obrigando as partes e seus sucessores. Qualquer alteração somente terá validade se realizada por escrito e assinada por ambas as partes. Fica eleito o foro da comarca de Uberlândia para dirimir eventuais dúvidas ou litígios decorrentes deste contrato, renunciando as partes a qualquer outro, por mais privilegiado que seja.</p>
           </div>
 
           <div class="section">Assinaturas</div>
           <div class="block">
             <p>Por estarem assim justas e contratadas, firmam o presente instrumento em 02 (duas) vias de igual teor.</p>
-            <p class="small">Assinaturas digitais (DocuSign/Clicksign) ou manuscritas são válidas para todos os fins de direito.</p>
+            <p class="small">Assinaturas digitais (Clicksign) ou manuscritas são válidas para todos os fins de direito.</p>
 
             <div class="assinaturas">
               <div class="tante-e-tada">
-                <div class="line"><span data-merge="cliente">[Cliente]</span></div>
+                <div class="line"><span data-merge="cliente">[cliente]</span></div>
                 CONTRATANTE<br>
                 <span class="small">Assinatura Digital: ____________________________</span><br>
                 <span class="small">Data: <span data-merge="dataAssinaturaLegivel" class="mono">[dd/mm/aaaa]</span></span>
@@ -481,5 +492,6 @@ function merge(){
       </div><!-- /sheet-wrap -->
     </div><!-- /grid -->
   </div><!-- /wrap -->
-</body>
-</html>
+
+
+</body></html>
